@@ -1,0 +1,51 @@
+import matplotlib.pyplot as plt
+
+categories = ['Жильё', 'Питание', 'Транспорт', 'Развлечения', 'Сбережения', 'Прочее']
+expenses = [30, 25, 15, 10, 15, 5]
+colors = ['#FF9999', '#66B2FF', '#99FF99', '#FFD700', '#FF6666', '#C2C2F0']
+explode = (0.1, 0, 0, 0.05, 0, 0)
+
+plt.figure(figsize=(12, 8))
+
+wedges, texts, autotexts = plt.pie(
+    expenses,
+    labels=categories,
+    colors=colors,
+    autopct='%1.1f%%',
+    startangle=90,
+    explode=explode,
+    shadow=True,
+    pctdistance=0.8,
+    wedgeprops={'linewidth': 2, 'edgecolor': 'white'},
+    textprops={'fontsize': 11}
+)
+
+def auto_explode_by_threshold(values, threshold_percent=20, explode_value=0.1):
+    total = sum(values)
+    explode = []
+    for val in values:
+        percentage = (val / total) * 100
+        if percentage >= threshold_percent:
+            explode.append(explode_value)
+        else:
+            explode.append(0)
+    return explode
+
+# Использование
+explode = auto_explode_by_threshold(expenses, threshold_percent=25)
+
+
+
+# Стилизация текста процентов
+for autotext in autotexts:
+    autotext.set_color('white')
+    autotext.set_fontweight('bold')
+
+# Легенда справа
+plt.legend(categories, title="Категории", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+
+plt.title('Распределение семейного бюджета', fontsize=16, fontweight='bold', pad=20)
+plt.axis('equal')
+plt.tight_layout()
+plt.savefig('enhanced_budget_pie.png', dpi=300, bbox_inches='tight')
+plt.show()
