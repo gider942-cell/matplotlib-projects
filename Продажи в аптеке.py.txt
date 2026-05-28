@@ -1,0 +1,54 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Синтетические данные для примера
+months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+sales = [120000, 135000, 140000, 160000, 180000, 210000,
+         230000, 225000, 200000, 190000, 175000, 240000]  # Продажи по месяцам, руб.
+categories = ['Лекарства', 'БАДы', 'Косметика', 'Прочее']
+category_sales = [450000, 230000, 150000, 70000]  # Суммарные продажи по категориям, руб.
+
+# Создаем фигуру и оси для нескольких графиков
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('Статистика продаж аптеки', fontsize=16, fontweight='bold')
+
+# График 1: Линейный график продаж по месяцам
+axes[0, 0].plot(months, sales, marker='o', color='blue', linewidth=2)
+axes[0, 0].set_title('Продажи по месяцам', fontweight='bold')
+axes[0, 0].set_xlabel('Месяц')
+axes[0, 0].set_ylabel('Продажи, руб.')
+axes[0, 0].grid(True, alpha=0.3)
+
+# График 2: Столбчатая диаграмма продаж по месяцам
+axes[0, 1].bar(months, sales, color='skyblue', edgecolor='navy', linewidth=1)
+axes[0, 1].set_title('Продажи по месяцам (столбцы)', fontweight='bold')
+axes[0, 1].set_xlabel('Месяц')
+axes[0, 1].set_ylabel('Продажи, руб.')
+
+# График 3: Круговая диаграмма долей категорий товаров
+colors = ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99']
+axes[1, 0].pie(category_sales, labels=categories, autopct='%1.1f%%', startangle=90, colors=colors)
+axes[1, 0].set_title('Доля категорий в продажах', fontweight='bold')
+
+# График 4: Гистограмма (распределение продаж по диапазонам)
+bins = [100000, 150000, 200000, 250000]
+hist_labels = ['100-150 тыс.', '150-200 тыс.', '200-250 тыс.']
+hist_data = []
+for s in sales:
+    for i, b in enumerate(bins):
+        if s < b:
+            hist_data.append(hist_labels[i-1] if i > 0 else hist_labels[0])
+            break
+    else:
+        hist_data.append(hist_labels[-1])
+
+# Подсчет количества месяцев в каждом диапазоне
+hist_counts = [hist_data.count(label) for label in hist_labels]
+axes[1, 1].bar(hist_labels, hist_counts, color='lightcoral', edgecolor='darkred')
+axes[1, 1].set_title('Распределение месяцев по объемам продаж', fontweight='bold')
+axes[1, 1].set_xlabel('Диапазон продаж, руб.')
+axes[1, 1].set_ylabel('Количество месяцев')
+
+# Настройка отступов и отображение
+plt.tight_layout()
+plt.show()
