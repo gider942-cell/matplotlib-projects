@@ -1,0 +1,99 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Создаём тестовые данные за год (12 месяцев)
+months = [
+    'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+    'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'
+]
+
+# Цены в рублях за баррель (нефть) и за литр (бензин)
+oil_prices = np.random.uniform(6000, 8000, 12)  # нефть
+gasoline_prices = np.random.uniform(45, 65, 12)   # бензин
+
+# Объёмы продаж в миллионах баррелей/литров
+oil_sales = np.random.uniform(100, 150, 12)
+gasoline_sales = np.random.uniform(800, 1200, 12)
+
+# Создаём DataFrame
+data = pd.DataFrame({
+    'Месяц': months,
+    'Цена_нефть': oil_prices,
+    'Продажи_нефть': oil_sales,
+    'Цена_бензин': gasoline_prices,
+    'Продажи_бензин': gasoline_sales
+})
+
+# Визуализация
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+
+# График цен
+ax1.plot(data['Месяц'], data['Цена_нефть'], 
+         marker='o', linewidth=2, label='Цена на нефть (руб/баррель)', color='blue')
+ax1.plot(data['Месяц'], data['Цена_бензин'], 
+         marker='s', linewidth=2, label='Цена на бензин (руб/л)', color='red')
+ax1.set_title('Динамика цен на нефть и бензин за год', fontsize=16)
+ax1.set_ylabel('Цена', fontsize=12)
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# График продаж
+ax2.bar(data['Месяц'], data['Продажи_нефть'], 
+         alpha=0.7, label='Продажи нефти (млн баррелей)', color='skyblue', width=0.4)
+ax2.bar([x + 0.4 for x in range(12)], data['Продажи_бензин'],
+         alpha=0.7, label='Продажи бензина (млн литров)', color='lightcoral', width=0.4)
+ax2.set_title('Объёмы продаж нефти и бензина за год', fontsize=16)
+ax2.set_ylabel('Объём продаж', fontsize=12)
+ax2.legend()
+ax2.grid(True, axis='y', alpha=0.3)
+
+# Настройка общего оформления
+plt.tight_layout()
+plt.show()
+
+# Вывод данных в табличном виде
+print("\nДанные за год:")
+print(data.to_string(index=False))
+
+# Вывод данных в табличном виде
+print("\nДанные за год:")
+print(data.to_string(index=False))
+
+# РАСЧЁТ КОРРЕЛЯЦИИ
+print("\n" + "="*50)
+print("АНАЛИЗ КОРРЕЛЯЦИИ")
+print("="*50)
+
+# Корреляция между ценами
+correlation = data['Цена_нефть'].corr(data['Цена_бензин'])
+print(f"Коэффициент корреляции Пирсона: {correlation:.4f}")
+
+if abs(correlation) > 0.7:
+    strength = "сильная"
+elif abs(correlation) > 0.3:
+    strength = "умеренная"
+else:
+    strength = "слабая"
+
+direction = "положительная" if correlation > 0 else "отрицательная"
+print(f"Вывод: {strength} {direction} корреляция между ценами на нефть и бензин")
+
+# Матрица корреляций
+print("\nПолная матрица корреляций:")
+corr_matrix = data.select_dtypes(include=[np.number]).corr()
+print(corr_matrix.round(4))
+
+# Диаграмма рассеяния
+plt.figure(figsize=(8, 6))
+plt.scatter(data['Цена_нефть'], data['Цена_бензин'], alpha=0.7, color='purple', s=60)
+plt.xlabel('Цена на нефть (руб/баррель)')
+plt.ylabel('Цена на бензин (руб/л)')
+plt.title(f'Корреляция цен: r = {correlation:.4f}')
+plt.grid(True, alpha=0.3)
+
+# Линия тренда
+z = np.polyfit(data['Цена_нефть'], data['Цена_бензин'], 1)
+p = np.poly1d(z)
+plt.plot(data['Цена_нефть'], p(data['Цена_нефть']), "r--", alpha=0.8, linewidth=2)
+plt.show()
