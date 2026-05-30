@@ -1,0 +1,38 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from collections import Counter
+
+# Создание тестовых данных
+np.random.seed(42)
+data = {
+'Продукт': np.random.choice([
+'Кремы', 'Сыворотки', 'Маски', 'Тоники', 'Солнцезащитные средства'
+], 100),
+'Продажи, руб.': np.random.randint(1000, 10000, 100),
+'Регион': np.random.choice(['Москва', 'СПб', 'Регионы'], 100),
+'Месяц': np.random.choice(['Январь', 'Февраль', 'Март'], 100)
+}
+df = pd.DataFrame(data)
+
+# Общая статистика
+print("Общая статистика продаж:")
+print(f"Общая сумма продаж: {df['Продажи, руб.'].sum()} руб.")
+print(f"Средняя сумма продаж: {df['Продажи, руб.'].mean():.2f} руб.")
+
+# Распределение продаж по месяцам
+plt.figure(figsize=(8, 8))
+month_sales = df.groupby('Месяц')['Продажи, руб.'].sum()
+plt.pie(month_sales.values, labels=month_sales.index, autopct='%1.1f%%', colors=['#A2C4E0', '#FFC8A2', '#CBA3E0'])
+plt.title('Распределение продаж по месяцам', fontsize=14, fontweight='bold')
+plt.show()
+
+# График продаж по продуктам
+plt.figure(figsize=(12, 6))
+product_sales = df.groupby('Продукт')['Продажи, руб.'].sum()
+plt.bar(product_sales.index, product_sales.values, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'])
+plt.title('Суммарные продажи по продуктам', fontsize=14, fontweight='bold')
+plt.xlabel('Продукты', fontsize=12)
+plt.ylabel('Продажи, руб.', fontsize=12)
+plt.xticks(rotation=45)
+plt.show()
