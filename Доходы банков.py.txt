@@ -1,0 +1,51 @@
+import matplotlib.pyplot as plt 
+import numpy as np 
+
+banks = ['Сбербанк', 'ВТБ', 'Газпромбанк', 'Альфа-Банк', 'Тинькофф', 'Россельхозбанк', 'Московский Кредитный Банк']
+
+revenues_2024 = [2950, 1680, 890, 670, 520, 460, 340]
+revenues_2025 = [3200, 1800, 950, 720, 580, 490, 370]
+
+growth = np.array(revenues_2025) - np.array(revenues_2024)
+revenues_2026 = np.array(revenues_2025) + growth
+
+plt.style.use('seaborn-v0_8')
+fig, ax = plt.subplots(figsize=(14, 8))
+
+x = np.arange(len(banks))
+width = 0.25  # Немного уменьшили ширину, чтобы было больше пространства
+
+bars1 = ax.bar(x - width, revenues_2024, width, label='2024 год', color='#1f77b4', alpha=0.8)
+bars2 = ax.bar(x, revenues_2025, width, label='2025 год (прогноз)', color='#ff7f0e', alpha=0.8)
+# Ключевое изменение: добавили отступ 0.4 между 2025 и 2026 годом
+bars3 = ax.bar(x + width, revenues_2026, width, label='2026 год (прогноз)', color='#2ca02c', alpha=0.4)
+
+ax.set_xlabel('Банки', fontsize = 12, fontweight = 'bold')
+ax.set_ylabel('Доходы, млрд руб.', fontsize = 12, fontweight = 'bold')
+ax.set_title('Сравнение доходов банков России: 2024 vs 2025 (прогноз) vs 2026 (прогноз)', fontsize=14, fontweight='bold', pad=20)
+
+# Теперь нужно задать две группы меток на оси X
+# Первая группа — для 2024 и 2025
+ax.set_xticks(x + 0.2)  # Сдвигаем немного вправо, чтобы метки были между 2024 и 2025
+ax.set_xticklabels(banks, rotation = 45, ha = 'right')
+
+def add_value_labels(bars):
+    for bar in bars:
+        height = bar.get_height()
+        ax.annotate(f'{int(height)}',
+                    xy = (bar.get_x() + bar.get_width() / 2, height),
+                    xytext = (0, 3), 
+                    textcoords = "offset points",
+                    ha = 'center', va = 'bottom', fontsize = 9)
+                    
+add_value_labels(bars1)
+add_value_labels(bars2)
+add_value_labels(bars3)
+
+ax.yaxis.grid(True, alpha = 0.3)
+ax.set_axisbelow(True)
+
+ax.legend(fontsize = 11)
+
+plt.tight_layout()
+plt.show() 
