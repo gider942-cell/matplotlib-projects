@@ -1,0 +1,119 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np  # Импортируем библиотеку numpy
+
+# Создаём DataFrame с тестовыми данными
+data = {
+    'Имя': ['Анна', 'Борис', 'Виктор', 'Галина', 'Дмитрий'],
+    'Возраст': [25, 30, 35, 28, 32],
+    'Город': ['Москва', 'Санкт-Петербург', 'Москва', 'Казань', 'Москва'],
+    'Зарплата': [50000, 60000, 75000, 55000, 70000]
+}
+
+df = pd.DataFrame(data)
+print("Исходные данные:")
+print(df)
+print()
+
+# Базовые операции с DataFrame
+print("Информация о DataFrame:")
+print(df.info())
+print()
+
+print("Статистические характеристики:")
+print(df.describe())
+print()
+
+# Использование numpy для вычислений
+print("Дополнительные статистические показатели с использованием numpy:")
+print(f"Медиана возраста: {np.median(df['Возраст'])} лет")
+print(f"Стандартное отклонение зарплаты: {np.std(df['Зарплата']):.2f} руб.")
+print(f"Сумма всех зарплат: {np.sum(df['Зарплата'])} руб.")
+print(f"Максимальная зарплата: {np.max(df['Зарплата'])} руб.")
+print(f"Минимальная зарплата: {np.min(df['Зарплата'])} руб.")
+print()
+
+# Фильтрация данных
+print("Люди старше 30 лет:")
+older_than_30 = df[df['Возраст'] > 30]
+print(older_than_30)
+print()
+
+# Группировка и агрегация
+print("Средняя зарплата по городам:")
+avg_salary_by_city = df.groupby('Город')['Зарплата'].mean()
+print(avg_salary_by_city)
+print()
+
+# Добавление нового столбца с использованием numpy
+df['Премия'] = np.round(df['Зарплата'] * 0.1, 2)  # Округление с помощью np.round
+print("Данные с добавленным столбцом 'Премия':")
+print(df)
+print()
+
+# Сортировка по зарплате
+print("Сортировка по зарплате (по убыванию):")
+sorted_by_salary = df.sort_values(by='Зарплата', ascending=False)
+print(sorted_by_salary)
+print()
+
+# Сохранение в CSV файл
+df.to_csv('employees_data.csv', index=False, encoding='utf-8')
+print("Данные сохранены в файл 'employees_data.csv'")
+
+# --- Визуализация данных с помощью matplotlib ---
+
+# 1. Столбчатая диаграмма: зарплата каждого сотрудника
+plt.figure(figsize=(10, 6))
+plt.bar(df['Имя'], df['Зарплата'], color='skyblue', edgecolor='navy')
+plt.title('Зарплата сотрудников', fontsize=16, fontweight='bold')
+plt.xlabel('Имя сотрудника', fontsize=12)
+plt.ylabel('Зарплата, руб.', fontsize=12)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# 2. Круговая диаграмма: распределение сотрудников по городам
+city_counts = df['Город'].value_counts()
+plt.figure(figsize=(8, 8))
+plt.pie(city_counts, labels=city_counts.index, autopct='%1.1f%%', startangle=90, colors=['lightcoral', 'lightskyblue', 'gold'])
+plt.title('Распределение сотрудников по городам', fontsize=16, fontweight='bold')
+plt.axis('equal')  # Для идеального круга
+plt.tight_layout()
+plt.show()
+
+# 3. Точечная диаграмма: зависимость зарплаты от возраста
+plt.figure(figsize=(10, 6))
+plt.scatter(df['Возраст'], df['Зарплата'], color='darkgreen', s=100, alpha=0.7)
+# Добавляем подписи к точкам
+for i, name in enumerate(df['Имя']):
+    plt.annotate(name, (df['Возраст'][i], df['Зарплата'][i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+plt.title('Зависимость зарплаты от возраста', fontsize=16, fontweight='bold')
+plt.xlabel('Возраст, лет', fontsize=12)
+plt.ylabel('Зарплата, руб.', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()
+
+# 4. Столбчатая диаграмма: средняя зарплата по городам (результат группировки)
+plt.figure(figsize=(10, 6))
+avg_salary_by_city.plot(kind='bar', color='lightsalmon', edgecolor='red')
+plt.title('Средняя зарплата по городам', fontsize=16, fontweight='bold')
+plt.xlabel('Город', fontsize=12)
+plt.ylabel('Средняя зарплата, руб.', fontsize=12)
+plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
+
+# Дополнительная визуализация с использованием numpy: гистограмма распределения зарплат
+plt.figure(figsize=(10, 6))
+plt.hist(df['Зарплата'], bins=np.linspace(df['Зарплата'].min(), df['Зарплата'].max(), 5),
+         color='purple', alpha=0.7, edgecolor='black')
+plt.title('Гистограмма распределения зарплат', fontsize=16, fontweight='bold')
+plt.xlabel('Зарплата, руб.', fontsize=12)
+plt.ylabel('Количество сотрудников', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()
