@@ -1,0 +1,94 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Настройка стиля графиков
+plt.style.use('seaborn-v0_8')
+
+# Параметры симуляции
+num_dice = 2  # количество костей
+num_rolls = 10000  # количество бросков
+
+# Генерация данных с помощью NumPy
+# Каждый бросок — сумма значений на двух костях (от 2 до 12)
+rolls = np.random.randint(1, 7, size=(num_rolls, num_dice))
+sums = np.sum(rolls, axis=1)
+
+# Создание DataFrame с помощью Pandas
+data = pd.DataFrame({
+    'roll_number': range(1, num_rolls + 1),
+    'dice_1': rolls[:, 0],
+    'dice_2': rolls[:, 1],
+    'sum': sums
+})
+
+# Анализ данных
+summary_stats = data['sum'].describe()
+frequency = data['sum'].value_counts().sort_index()
+probability = frequency / num_rolls
+
+# Вывод статистики
+print("Статистика по суммам бросков:")
+print(summary_stats)
+print("\nЧастоты и вероятности:")
+for total, freq in frequency.items():
+    prob = probability[total]
+    print(f"Сумма {total}: {freq} раз ({prob:.4f})")
+
+# Визуализация результатов с помощью Matplotlib
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('Анализ бросков игральных костей', fontsize=16)
+
+# График 1: Гистограмма сумм
+axes[0, 0].hist(data['sum'], bins=range(2, 14), alpha=0.7, edgecolor='black')
+axes[0, 0].set_title('Распределение сумм бросков')
+axes[0, 0].set_xlabel('Сумма')
+axes[0, 0].set_ylabel('Частота')
+
+# График 2: Столбчатая диаграмма вероятностей
+axes[0, 1].bar(frequency.index, probability, color='skyblue', edgecolor='navy')
+axes[0, 1].set_title('Вероятности выпадения сумм')
+axes[0, 1].set_xlabel('Сумма')
+axes[0, 1].set_ylabel('Вероятность')
+axes[0, 1].set_xticks(range(2, 13))
+
+# График 3: Кумулятивное распределение
+cumulative_prob = probability.cumsum()
+axes[1, 0].plot(cumulative_prob.index, cumulative_prob, marker='o', linewidth=2)
+axes[1, 0].set_title('Кумулятивное распределение')
+axes[1, 0].set_xlabel('Сумма')
+axes[1, 0].set_ylabel('Кумулятивная вероятность')
+axes[1, 0].grid(True, alpha=0.3)
+
+# График 4: Скользящее среднее суммы бросков
+window_size = 100
+rolling_mean = data['sum'].rolling(window=window_size).mean()
+axes[1, 1].plot(data['roll_number'], rolling_mean, color='purple', alpha=0.8)
+axes[1, 1].set_title(f'Скользящее среднее (окно = {window_size})')
+axes[1, 1].set_xlabel('Номер броска')
+axes[1, 1].set_ylabel('Среднее значение')
+axes[1, 1].axhline(y=7, color='red', linestyle='--', label='Теоретическое среднее = 7')
+axes[1, 1].legend()
+
+# Настройка отображения
+plt.tight_layout()
+plt.show()
+
+# Дополнительный анализ: корреляция между костями
+correlation = data['dice_1'].corr(data['dice_2'])
+print(f"\nКорреляция между результатами двух костей: {correlation:.4f}")
+
+# Проверка соответствия теоретическому распределению
+theoretical_probs = {
+    2: 1/36, 3: 2/36, 4: 3/36, 5: 4/36, 6: 5/36,
+    7: 6/36, 8: 5/36, 9: 4/36, 10: 3/36, 11: 2/36, 12: 1/36
+}
+
+print("\nСравнение с теоретическими вероятностями:")
+print("Сумма | Эмпирическая | Теоретическая | Разница")
+print("-" * 45)
+for total in range(2, 13):
+    empirical = probability.get(total, 0)
+    theoretical = theoretical_probs[total]
+    difference = abs(empirical - theoretical)
+    print(f"{total:3} | {empirical:10.4f} | {theoretical:12.4f} | {difference:7.4f}")
