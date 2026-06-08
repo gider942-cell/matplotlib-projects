@@ -1,0 +1,46 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+matrix_np = np.random.randint(0, 100, size=(5, 5))
+print("Матрица NumPy:")
+print(matrix_np)
+
+df = pd.DataFrame(
+    matrix_np,
+    columns=['Колонка A', 'Колонка B', 'Колонка C', 'Колонка D', 'Колонка E'],
+    index=['Строка 1', 'Строка 2', 'Строка 3', 'Строка 4', 'Строка 5']
+)
+print("\nМатрица в формате pandas DataFrame:")
+print(df)
+
+plt.figure(figsize=(8, 6))
+heatmap = plt.imshow(matrix_np, cmap='viridis', aspect='auto')
+plt.colorbar(heatmap)
+plt.xticks(range(5), df.columns, rotation=45)
+plt.yticks(range(5), df.index)
+plt.title('Визуализация матрицы (тепловая карта)')
+plt.grid(False)
+plt.tight_layout()
+plt.show()
+
+def print_matrix_stats(matrix):
+    print("\nСтатистические характеристики матрицы:")
+    print(f"Среднее значение: {np.mean(matrix):.2f}")
+    print(f"Медиана: {np.median(matrix):.2f}")
+    print(f"Стандартное отклонение: {np.std(matrix):.2f}")
+    print(f"Минимум: {np.min(matrix)}")
+    print(f"Максимум: {np.max(matrix)}")
+    print(f"Сумма всех элементов: {np.sum(matrix)}")
+print_matrix_stats(matrix_np)
+
+print("\nСтатистика по строкам:")
+row_means = np.mean(matrix_np, axis=1)
+row_stds = np.std(matrix_np, axis=1)
+for i, (mean, std) in enumerate(zip(row_means, row_stds)):
+    print(f"Строка {i+1}: среднее = {mean:.2f}, стд. откл. = {std:.2f}")
+print("\nСтатистика по столбцам:")
+col_means = np.mean(matrix_np, axis=0)
+col_stds = np.std(matrix_np, axis=0)
+for col_name, mean, std in zip(df.columns, col_means, col_stds):
+    print(f"{col_name}: среднее = {mean:.2f}, стд. откл. = {std:.2f}")
