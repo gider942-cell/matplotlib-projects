@@ -1,0 +1,87 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# --- 1. Генерация данных (имитация эксперимента) ---
+# Время от 0 до 10 с шагом 0.05
+t = np.arange(0, 10, 0.05)
+
+# Затухающие колебания: x(t) = A * exp(-gamma*t) * cos(omega*t + phi)
+A = 5.0
+gamma = 0.3
+omega = 2 * np.pi * 0.8  # частота 0.8 Гц
+phi = np.pi / 4
+
+x = A * np.exp(-gamma * t) * np.cos(omega * t + phi)
+
+# Добавим шум, чтобы имитировать реальные измерения
+noise = np.random.normal(loc=0.0, scale=0.2, size=t.shape)
+x_noisy = x + noise
+
+# Скорость (первая производная) — численно через конечные разности
+v = np.gradient(x_noisy, t)
+
+# Ускорение (вторая производная)
+a = np.gradient(v, t)
+
+# Кинетическая энергия (масса m = 1 кг)
+m = 1.0
+E_kin = 0.5 * m * v**2
+
+# Потенциальная энергия (для гармонического осциллятора: U = 0.5*k*x^2)
+# k = m * omega^2
+k = m * omega**2
+E_pot = 0.5 * k * x_noisy**2
+
+# Полная энергия
+E_total = E_kin + E_pot
+
+# --- 2. Сборка данных в DataFrame (pandas) ---
+df = pd.DataFrame({
+    'time': t,
+    'displacement': x_noisy,
+    'velocity': v,
+    'acceleration': a,
+    'kinetic_energy': E_kin,
+    'potential_energy': E_pot,
+    'total_energy': E_total
+})
+
+# Пример простой обработки: скользящее среднее для сглаживания
+window_size = 5
+df['displacement_smooth'] = df['displacement'].rolling(window=window_size, center=True).mean()
+
+# Можно сохранить результаты в CSV для дальнейшего анализа
+df.to_csv('experiment_data.csv', index=False)
+print("Данные сохранены в experiment_data.csv")
+print(df.head())
+
+# --- 3. Визуализация (matplotlib) ---
+plt.style.use('seaborn-v0_8-whitegrid')  # опционально
+fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+
+# График 1: смещение (сырые и сглаженные данные)
+axs[0].plot(df['time'], df['displacement'], '.', markersize=3, label='raw displacement', alpha=0.6)
+axs[0].plot(df['time'], df['displacement_smooth'], 'r-', linewidth=2, label='smoothed')
+axs[0].set_ylabel('Displacement (m)')
+axs[0].legend(loc='upper right')
+axs[0].set_title('Damped Oscillation: Displacement')
+
+# График 2: скорость и ускорение
+axs[1].plot(df['time'], df['velocity'], 'b-', linewidth=1.5, label='velocity')
+axs[1].plot(df['time'], df['acceleration'], 'g-', linewidth=1.5, label='acceleration')
+axs[1].set_ylabel('Velocity (m/s) / Acceleration (m/s?)')
+axs[1].legend(loc='upper right')
+axs[1].set_title('Velocity and Acceleration')
+
+# График 3: энергии
+axs[2].plot(df['time'], df['kinetic_energy'], 'orange', label='kinetic')
+axs[2].plot(df['time'], df['potential_energy'], 'purple', label='potential')
+axs[2].plot(df['time'], df['total_energy'], 'k--', linewidth=2, label='total')
+axs[2].set_xlabel('Time (s)')
+axs[2].set_ylabel('Energy (J)')
+axs[2].legend(loc='upper right')
+axs[2].set_title('Energy Components')
+
+plt.tight_layout()
+plt.show()
