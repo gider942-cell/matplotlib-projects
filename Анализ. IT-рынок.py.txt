@@ -1,0 +1,110 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Настройка отображения графиков
+plt.style.use('seaborn-v0_8')  # Красивый стиль
+
+# 1. Генерация синтетических данных
+np.random.seed(42)  # Для воспроизводимости
+
+years = np.arange(2020, 2026)  # 2020–2025
+n_years = len(years)
+
+# Создаём данные с трендами и шумом
+data = {
+    'Год': years,
+    'Объём рынка (млрд $)': np.linspace(400, 750, n_years) + np.random.normal(0, 15, n_years),
+    'Количество вакансий': np.linspace(1200000, 2100000, n_years) + np.random.normal(0, 30000, n_years),
+    'Средняя зарплата (тыс. руб.)': np.linspace(85, 140, n_years) + np.random.normal(0, 5, n_years),
+    'Доля удалённой работы (%)': np.linspace(25, 65, n_years) + np.random.normal(0, 3, n_years),
+    'Инвестиции в стартапы (млрд $)': np.linspace(50, 120, n_years) + np.random.normal(0, 8, n_years)
+}
+
+# Создаём DataFrame
+df = pd.DataFrame(data)
+
+# Округляем значения для красоты
+df['Объём рынка (млрд $)'] = df['Объём рынка (млрд $)'].round(1)
+df['Количество вакансий'] = df['Количество вакансий'].round(-3).astype(int)
+df['Средняя зарплата (тыс. руб.)'] = df['Средняя зарплата (тыс. руб.)'].round(1)
+df['Доля удалённой работы (%)'] = df['Доля удалённой работы (%)'].round(1)
+df['Инвестиции в стартапы (млрд $)'] = df['Инвестиции в стартапы (млрд $)'].round(1)
+
+print("Данные IT?рынка (2020–2025):")
+print(df)
+print("\n" + "="*50 + "\n")
+
+# 2. Базовый анализ данных
+print("СТАТИСТИКА ПО РЫНКУ:")
+print(f"Средний объём рынка: {df['Объём рынка (млрд $)'].mean():.1f} млрд $")
+print(f"Рост объёма рынка: {((df['Объём рынка (млрд $)'].iloc[-1] / df['Объём рынка (млрд $)'].iloc[0] - 1) * 100):.1f}%")
+print(f"Средняя зарплата: {df['Средняя зарплата (тыс. руб.)'].mean():.1f} тыс. руб.")
+print(f"Рост зарплат: {((df['Средняя зарплата (тыс. руб.)'].iloc[-1] / df['Средняя зарплата (тыс. руб.)'].iloc[0] - 1) * 100):.1f}%")
+
+# 3. Визуализация данных
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('Анализ IT?рынка (2020–2025)', fontsize=16, fontweight='bold')
+
+# График 1: Объём рынка
+axes[0, 0].plot(df['Год'], df['Объём рынка (млрд $)'], marker='o', linewidth=2, color='blue')
+axes[0, 0].set_title('Объём IT?рынка', fontweight='bold')
+axes[0, 0].set_ylabel('Млрд $')
+axes[0, 0].grid(True, alpha=0.3)
+
+# График 2: Количество вакансий
+axes[0, 1].bar(df['Год'], df['Количество вакансий'], color='green', alpha=0.7)
+axes[0, 1].set_title('Количество IT?вакансий', fontweight='bold')
+axes[0, 1].set_ylabel('Количество')
+axes[0, 1].grid(True, alpha=0.3)
+
+# График 3: Средняя зарплата
+axes[1, 0].plot(df['Год'], df['Средняя зарплата (тыс. руб.)'], marker='s', linewidth=2, color='purple')
+axes[1, 0].set_title('Средняя зарплата в IT', fontweight='bold')
+axes[1, 0].set_ylabel('Тыс. руб.')
+axes[1, 0].grid(True, alpha=0.3)
+
+# График 4: Доля удалённой работы
+axes[1, 1].plot(df['Год'], df['Доля удалённой работы (%)'], marker='^', linewidth=2, color='orange')
+axes[1, 1].set_title('Доля удалённой работы', fontweight='bold')
+axes[1, 1].set_ylabel('%')
+axes[1, 1].grid(True, alpha=0.3)
+
+# Общая настройка графиков
+for ax in axes.flat:
+    ax.set_xlabel('Год')
+    ax.set_xticks(df['Год'])
+
+plt.tight_layout()
+plt.show()
+
+# 4. Дополнительный анализ: корреляции
+print("КОРРЕЛЯЦИЯ МЕЖДУ ПОКАЗАТЕЛЯМИ:")
+correlation_matrix = df.corr(numeric_only=True)
+print(correlation_matrix['Объём рынка (млрд $)'].sort_values(ascending=False))
+
+# Визуализация корреляционной матрицы
+plt.figure(figsize=(8, 6))
+plt.imshow(correlation_matrix, cmap='coolwarm', aspect='auto', interpolation='nearest')
+plt.colorbar(label='Коэффициент корреляции')
+plt.xticks(range(len(correlation_matrix.columns)), correlation_matrix.columns, rotation=45)
+plt.yticks(range(len(correlation_matrix.columns)), correlation_matrix.columns)
+plt.title('Корреляционная матрица показателей IT?рынка')
+plt.tight_layout()
+plt.show()
+
+# 5. Прогноз на 2026 год (линейная экстраполяция)
+from sklearn.linear_model import LinearRegression
+
+X = df[['Год']].values
+y_market = df['Объём рынка (млрд $)'].values
+
+model = LinearRegression()
+model.fit(X, y_market)
+
+forecast_year = np.array([[2026]])
+forecast_value = model.predict(forecast_year)[0]
+
+print(f"\nПРОГНОЗ НА 2026 ГОД:")
+print(f"Ожидаемый объём рынка: {forecast_value:.1f} млрд $")
+print(f"Прогнозный рост к 2025 году: {((forecast_value / df['Объём рынка (млрд $)'].iloc[-1] - 1) * 100):.1f}%")
