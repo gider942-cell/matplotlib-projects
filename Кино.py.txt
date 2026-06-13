@@ -1,0 +1,74 @@
+import numpy as np 
+import pandas as pd
+import matplotlib.pyplot as plt 
+
+np.random.seed(42)
+n_movies = 50 
+movie_titles = [fФильм {i} for i in range(1, n_movies + 1)] 
+genres = ['Боевик', 'Драма', 'Комедия', 'Фантастика', 'Ужасы', 'Мелодрама']
+movie_genres = np.random.choice(genres, size=n_movies)
+budgets = np.random.uniform(20, 200, size=n_movies).round(1) 
+box_office = budgets  np.random.uniform(1.5, 5, size=n_movies).round(1)
+ratings = np.random.normal(7, 1.5, size=n_movies).clip(1, 10).round(1)
+reviews_count = np.random.randint(10000, 500000, size=n_movies)
+
+df = pd.DataFrame({
+    'Название' movie_titles,
+    'Жанр' movie_genres,
+    'Бюджет (млн $)' budgets,
+    'Кассовые сборы (млн $)' box_office,
+    'Рейтинг' ratings,
+    'Количество отзывов' reviews_count
+})
+df['Коэффициент окупаемости'] = (df['Кассовые сборы (млн $)']  df['Бюджет (млн $)']).round(2)
+print(Данные о фильмах 2025 года)
+print(df.head(10))
+print(n + =50 + n)
+print(Статистическая сводка)
+print(df.describe())
+top_movies = df.sort_values(['Рейтинг', 'Количество отзывов'], ascending=[False, False]).head(5)
+print(nТоп-5 самых популярных фильмов 2025 года)
+print(top_movies[['Название', 'Рейтинг', 'Количество отзывов', 'Коэффициент окупаемости']])
+genre_stats = df.groupby('Жанр').agg({
+    'Рейтинг' 'mean',
+    'Коэффициент окупаемости' 'mean',
+    'Количество отзывов' 'sum'
+}).round(2)
+print(nСтатистика по жанрам)
+print(genre_stats)
+
+plt.figure(figsize=(15, 12))
+plt.subplot(2, 3, 1)
+plt.hist(df['Рейтинг'], bins=10, color='skyblue', edgecolor='black', alpha=0.7)
+plt.title('Распределение рейтингов фильмов 2025 года')
+plt.xlabel('Рейтинг')
+plt.ylabel('Количество фильмов')
+plt.subplot(2, 3, 2)
+genre_roi = df.groupby('Жанр')['Коэффициент окупаемости'].mean().sort_values(ascending=False)
+plt.bar(genre_roi.index, genre_roi.values, color='lightcoral')
+plt.title('Средняя окупаемость по жанрам')
+plt.xlabel('Жанр')
+plt.ylabel('Коэффициент окупаемости')
+plt.xticks(rotation=45)
+plt.subplot(2, 3, 3)
+plt.scatter(df['Бюджет (млн $)'], df['Кассовые сборы (млн $)'],
+           c=df['Рейтинг'], cmap='viridis', alpha=0.6)
+plt.colorbar(label='Рейтинг')
+plt.title('Бюджет vs Кассовые сборы')
+plt.xlabel('Бюджет (млн $)')
+plt.ylabel('Кассовые сборы (млн $)')
+plt.subplot(2, 3, 4)
+genre_counts = df['Жанр'].value_counts()
+plt.pie(genre_counts.values, labels=genre_counts.index, autopct='%1.1f%%')
+plt.title('Распределение фильмов по жанрам')
+plt.subplot(2, 3, 5)
+plt.barh(top_movies['Название'], top_movies['Рейтинг'], color='gold')
+plt.title('Топ-5 фильмов по рейтингу')
+plt.xlabel('Рейтинг')
+plt.subplot(2, 3, 6)
+plt.plot(df['Количество отзывов'], df['Рейтинг'], 'o', alpha=0.5)
+plt.title('Рейтинг vs Количество отзывов')
+plt.xlabel('Количество отзывов')
+plt.ylabel('Рейтинг')
+plt.tight_layout()
+plt.show()
