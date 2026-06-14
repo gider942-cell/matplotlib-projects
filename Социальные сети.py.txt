@@ -1,0 +1,110 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+
+sns.set(style="whitegrid")
+plt.rcParams['figure.figsize'] = (14, 8)
+plt.rcParams['font.size'] = 12 
+
+np.random.seed(42)
+
+months = pd.date_range(start='2025-01-01', periods=24, freq='M')
+platforms = ['TikTok', 'YouTube', 'Meta (FB+IG)', 'X (Twitter)', 'VK', 'Telegram']
+
+data = [] 
+
+for platform in platforms:
+    base_users = np.random.randint(500, 3000)
+    base_revenue = np.random.uniform(2, 15) 
+    
+    trend_users = {
+        'TikTok': 1.03, 'YouTube': 1.015, 'Meta (FB+IG)': 1.005,
+        'X (Twitter)': 0.99, 'VK': 1.02, 'Telegram': 1.04 
+    }
+    
+    trend_revenue = {
+        'TikTok': 1.04, 'YouTube': 1.02, 'Meta (FB+IG)': 1.01, 
+        'X (Twitter)': 0.98, 'VK': 1.03, 'Telegram': 1.05
+    }
+    
+    current_users = base_users 
+    current_revenue = base_revenue 
+    
+    for month in months:
+        noise_users = np.random.normal(0, base_users * 0.02)
+        noise_revenue = np.random.normal(0, base_revenue * 0.03)
+        
+        current_users = current_users * trend_users[platform] + noise_users 
+        current_revenue = current_revenue * trend_revenue[platform] + noise_revenue 
+        
+        data.append({
+            'Date': month,
+            'Platform': platform,
+            'Users_Mln': max(0, current_users),
+            'Revenue_Billion': max(0, current_revenue)
+        })
+        
+df = pd.DataFrame(data)
+
+df['Year'] = df['Date'].dt.year 
+yearly_stats = df.groupby(['Year', 'Platform']).agg({
+    'Users_Mln': 'mean',
+    'Revenue_Billion': 'sum'
+}).reset_index()
+
+print("=== СРЕДНЯЯ АУДИТОРИЯ И СУММАРНЫЕ ДОХОДЫ ПО ГОДАМ ===")
+print(yearly_stats.to_string(index=False))
+
+correlations = []
+for platform in platforms:
+    sub_df = df[df['Platform'] == platform]
+    corr_val = sub_df['Users_Mln'].corr(sub_df['Revenue_Billion'])
+    correlations.append({'Platform': platform, 'Correlation_Users_Revenue': corr_val})
+    
+corr_df = pd.DataFrame(correlations)
+print("\n=== КОРРЕЛЯЦИЯ МЕЖДУ АУДИТОРИЕЙ И ДОХОДАМИ ===")
+print(corr_df.sort_values('Correlation_Users_Revenue', ascending=False).to_string(index=False))
+
+fig, axs = plt.subplots(2, 2, figsize=(18, 14))
+
+for platform in platforms:
+    plat_data = df[df['Platform'] == platform]
+    axs[0, 0].plot(plat_data['Date'], plat_data['Users_Mln'], label=platform, linewidth=2)
+axs[0, 0].set_title('Динамика аудитории (млн пользователей) 2025-2026')
+axs[0, 0].set_xlabel('Дата')
+axs[0, 0].set_ylabel('Пользователи (млн)')
+axs[0, 0].legend(loc='upper left')
+axs[0, 0].grid(True, alpha=0.3)
+
+for platform in platforms:
+    plat_data = df[df['Platform'] == platform]
+    axs[0, 1].plot(plat_data['Date'], plat_data['Revenue_Billion'], label=platform, linewidth=2)
+axs[0, 1].set_title('Динамика доходов (млрд $) 2025-2026')
+axs[0, 1].set_xlabel('Дата')
+axs[0, 1].set_ylabel('Доходы (млрд $)')
+axs[0, 1].legend(loc='upper left')
+axs[0, 1].grid(True, alpha=0.3)
+
+pivot_users = df.pivot_table(index='Date', columns='Platform', values='Users_Mln')
+pivot_revenue = df.pivot_table(index='Date', columns='Platform', values='Revenue_Billion')
+
+corr_matrix_users = pivot_users.corr() 
+sns.heatmap(corr_matrix_users, annot=True, cmap='coolwarm', fmt=".2f", ax=axs[1, 0], cbar_kws={'label': 'Коэффициент корреляции'})
+axs[1, 0].set_title('Корреляция аудитории между платформами')
+
+scatter_data = df.copy()
+colors = np.random.rand(len(scatter_data))
+axs[1, 1].scatter(scatter_data['Users_Mln'], scatter_data['Revenue_Billion'], c=colors, cmap='viridis', alpha=0.6, s=100, edgecolors='k')
+axs[1, 1].set_title('Зависимость доходов от размера аудитории (по всем наблюдениям)')
+axs[1, 1].set_xlabel('Пользователи (млн)')
+axs[1, 1].set_ylabel('Доходы (млрд $)')
+axs[1, 1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+df_2026 = df[df['Year'] == 2026]
+top_platforms = df_2026.groupby('Platform')['Users_Mln'].mean().sort_values(ascending=False).head(3)
+print("\n=== ТОП-3 САМЫХ ВОСТРЕБОВАННЫХ ПЛАТФОРМ В 2026 ГОДУ (средняя аудитория) ===")
+print(top_platforms)
