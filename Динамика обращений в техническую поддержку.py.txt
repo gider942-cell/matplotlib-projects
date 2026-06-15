@@ -1,0 +1,207 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Настройка стиля графиков
+plt.style.use('seaborn-v0_8-darkgrid')
+plt.rcParams['font.size'] = 10
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['figure.figsize'] = (12, 6)
+
+
+def generate_support_data(n_days=90, seed=42):
+    """
+    Генерирует синтетические данные обращений в техподдержку.
+    Возвращает DataFrame с колонками:
+      - created_at: дата и время обращения
+      - service: услуга (интернет/телефония/телевидение)
+      - reason: причина обращения (для детализации)
+      - priority: приоритет (низкий/средний/высокий)
+    """
+    np.random.seed(seed)
+
+    # Даты: n_days начиная с сегодняшнего дня
+    start_date = pd.Timestamp.today().normalize()
+    dates = pd.date_range(start=start_date, periods=n_days, freq='D')
+
+    # Распределение обращений по дням: добавляем сезонность и случайность
+    base_per_day = 50
+    seasonal = np.sin(np.linspace(0, 4 * np.pi, n_days)) * 15  # сезонный эффект
+    noise = np.random.normal(loc=0, scale=8, size=n_days)
+    daily_counts = np.maximum(10, base_per_day + seasonal + noise).astype(int)
+
+    # Создаём список всех обращений
+    records = []
+    for i, d in enumerate(dates):
+        n = daily_counts[i]
+        # Время обращений в течение дня (часы 8–22)
+        hours = np.random.randint(8, 23, size=n)
+        minutes = np.random.randint(0, 60, size=n)
+        seconds = np.random.randint(0, 60, size=n)
+
+        # Услуги: распределение
+        services = np.random.choice(
+            ['интернет', 'телефония', 'телевидение'],
+            size=n,
+            p=[0.55, 0.25, 0.20]  # интернет чаще всего
+        )
+
+        # Причины обращений (примерные категории)
+        reasons_internet = ['низкая скорость', 'обрыв соединения', 'настройка роутера', 'тариф']
+        reasons_telephony = ['нет гудков', 'не проходит вызов', 'переадресация', 'тариф']
+        reasons_tv = ['нет каналов', 'качество изображения', 'приставка', 'тариф']
+
+        reasons = []
+        for s in services:
+            if s == 'интернет':
+                reasons.append(np.random.choice(reasons_internet, p=[0.4, 0.3, 0.2, 0.1]))
+            elif s == 'телефония':
+                reasons.append(np.random.choice(reasons_telephony, p=[0.35, 0.35, 0.2, 0.1]))
+            else:
+                reasons.append(np.random.choice(reasons_tv, p=[0.4, 0.3, 0.2, 0.1]))
+
+        priorities = np.random.choice(['низкий', 'средний', 'высокий'], size=n, p=[0.6, 0.3, 0.1])
+
+        for h, m, s_sec, serv, reas, prio in zip(hours, minutes, seconds, services, reasons, priorities):
+            ts = d + pd.Timedelta(hours=h, minutes=m, seconds=s_sec)
+            records.append({
+                'created_at': ts,
+                'service': serv,
+                'reason': reas,
+                'priority': prio
+            })
+
+    df = pd.DataFrame(records)
+    return df
+
+
+def analyze_support_data(df: pd.DataFrame):
+    """
+    Выполняет подробный анализ данных обращений.
+    Возвращает словарь с результатами и агрегированными таблицами.
+    """
+    results = {}
+
+    # 1. Базовые метрики
+    total_requests = len(df)
+    unique_days = df['created_at'].dt.normalize().nunique()
+    avg_per_day = total_requests / unique_days
+    cv_per_day = df.groupby(df['created_at'].dt.normalize()).size().std() / avg_per_day if avg_per_day != 0 else 0
+
+    results['basic_metrics'] = {
+        'total_requests': total_requests,
+        'unique_days': unique_days,
+        'avg_per_day': avg_per_day,
+        'cv_per_day': cv_per_day
+    }
+
+    # 2. Распределение по услугам
+    service_dist = df['service'].value_counts(normalize=True) * 100
+    results['service_distribution'] = service_dist
+
+    # 3. Динамика по дням
+    daily = df.groupby(df['created_at'].dt.normalize()).size()
+    peak_days = daily.nlargest(5)
+    results['daily_series'] = daily
+    results['peak_days'] = peak_days
+
+    # Доля пиковых дней (топ-5 дней) от общего числа обращений
+    peak_share = peak_days.sum() / total_requests if total_requests > 0 else 0
+    results['peak_share'] = peak_share
+
+    # 4. Распределение по причинам (топ-10)
+    reason_top = df['reason'].value_counts().head(10)
+    results['reason_top'] = reason_top
+
+    # 5. Распределение по приоритетам
+    priority_dist = df['priority'].value_counts(normalize=True) * 100
+    results['priority_distribution'] = priority_dist
+
+    # 6. Динамика по часам суток
+    hourly = df.groupby(df['created_at'].dt.hour).size()
+    results['hourly_profile'] = hourly
+
+    # 7. Анализ по услугам и причинам (матрица)
+    service_reason = pd.crosstab(df['service'], df['reason'])
+    results['service_reason_matrix'] = service_reason
+
+    return results
+
+
+def plot_support_analysis(df: pd.DataFrame, results: dict):
+    """
+    Строит набор графиков для визуализации результатов анализа.
+    """
+    fig = plt.figure(figsize=(14, 10))
+    gs = fig.add_gridspec(3, 2, hspace=0.35, wspace=0.3)
+
+    # График 1: динамика обращений по дням
+    ax1 = fig.add_subplot(gs[0, :])
+    daily = results['daily_series']
+    ax1.plot(daily.index, daily.values, marker='o', linewidth=1.5, color='#2c3e50')
+    ax1.set_title('Динамика обращений по дням')
+    ax1.set_xlabel('Дата')
+    ax1.set_ylabel('Количество обращений')
+    ax1.grid(True, linestyle='--', alpha=0.5)
+
+    # График 2: распределение по услугам
+    ax2 = fig.add_subplot(gs[1, 0])
+    service_dist = results['service_distribution']
+    colors = ['#3498db', '#e74c3c', '#2ecc71']
+    ax2.pie(service_dist.values, labels=service_dist.index, autopct='%1.1f%%', colors=colors, startangle=90)
+    ax2.set_title('Распределение обращений по услугам')
+
+    # График 3: топ причин обращений
+    ax3 = fig.add_subplot(gs[1, 1])
+    reason_top = results['reason_top']
+    ax3.barh(reason_top.index.astype(str), reason_top.values, color='#f39c12')
+    ax3.set_title('Топ-10 причин обращений')
+    ax3.invert_yaxis()
+    ax3.set_xlabel('Количество обращений')
+
+    # График 4: профиль нагрузки по часам
+    ax4 = fig.add_subplot(gs[2, 0])
+    hourly = results['hourly_profile']
+    ax4.bar(hourly.index, hourly.values, color='#9b59b6')
+    ax4.set_title('Нагрузка по часам суток')
+    ax4.set_xlabel('Час суток')
+    ax4.set_ylabel('Количество обращений')
+
+    # График 5: распределение по приоритетам
+    ax5 = fig.add_subplot(gs[2, 1])
+    priority_dist = results['priority_distribution']
+    colors_prio = ['#27ae60', '#f1c40f', '#c0392b']
+    ax5.pie(priority_dist.values, labels=priority_dist.index, autopct='%1.1f%%', colors=colors_prio, startangle=90)
+    ax5.set_title('Распределение по приоритетам')
+
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == '__main__':
+    # Генерация данных
+    df_support = generate_support_data(n_days=90)
+
+    # Анализ
+    analysis_results = analyze_support_data(df_support)
+
+    # Вывод базовых метрик
+    print("=== Базовые метрики ===")
+    for k, v in analysis_results['basic_metrics'].items():
+        print(f"{k}: {v:.2f}" if isinstance(v, float) else f"{k}: {v}")
+
+    print("\n=== Распределение по услугам (%) ===")
+    print(analysis_results['service_distribution'].round(2))
+
+    print("\n=== Топ-5 пиковых дней ===")
+    print(analysis_results['peak_days'])
+    print(f"Доля обращений в пиковые дни: {analysis_results['peak_share']:.2%}")
+
+    print("\n=== Топ-10 причин обращений ===")
+    print(analysis_results['reason_top'])
+
+    print("\n=== Распределение по приоритетам (%) ===")
+    print(analysis_results['priority_distribution'].round(2))
+
+    # Визуализация
+    plot_support_analysis(df_support, analysis_results)
