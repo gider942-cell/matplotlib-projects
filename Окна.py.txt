@@ -1,0 +1,71 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+plt.style.use('seaborn-v0_8')
+
+np.random.seed(42) 
+
+months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь']
+window_types = ['ПВХ', 'Дерево', 'Алюминий', 'Балконные блоки']
+
+data = [] 
+for month in months:
+    for window_type in window_types:
+        base_income = np.random.uniform(500, 2000)
+        seasonal_factor = 1 + (months.index(month) * 0.1)
+        income = base_income * seasonal_factor 
+        data.append({
+            'Месяц': month,
+            'Тип окна': window_type,
+            'Доход, тыс. руб.': round(income, 1)
+        })
+        
+df = pd.DataFrame(data)
+
+print("Общая статистика по доходам:")
+print(df.groupby('Тип окна')['Доход, тыс. руб.'].agg(['sum', 'mean', 'std']).round(1))
+
+monthly_income = df.groupby('Месяц')['Доход, тыс. руб.'].sum()
+print("\nСуммарный доход по месяцам:")
+print(monthly_income)
+
+max_income = df['Доход, тыс. руб.'].max()
+max_row = df[df['Доход, тыс. руб.'] == max_income].iloc[0]
+print(f"\nМаксимальный доход: {max_income} тыс. руб. (месяц: {max_row['Месяц']}, тип: {max_row['Тип окна']})")
+
+fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+fig.suptitle('Анализ доходов предприятия "Окна от природы СПб"', fontsize=16, fontweight='bold')
+
+axes[0, 0].bar(monthly_income.index, monthly_income.values, color='skyblue', edgecolor='navy')
+axes[0, 0].set_title('Суммарный доход по месяцам')
+axes[0, 0].set_ylabel('Доход, тыс. руб.')
+axes[0, 0].tick_params(axis='x', rotation=45)
+
+type_income = df.groupby('Тип окна')['Доход, тыс. руб.'].sum()
+axes[0, 1].pie(type_income.values, labels=type_income.index, autopct='%1.1f%%', startangle=90)
+axes[0, 1].set_title('Распределение доходов по типам окон')
+
+for window_type in window_types:
+    subset = df[df['Тип окна'] == window_type]
+    axes[1, 0].plot(subset['Месяц'], subset['Доход, тыс. руб.'], marker='o', label=window_type)
+axes[1, 0].set_title('Динамика доходов по типам окон')
+axes[1, 0].set_ylabel('Доход, тыс. руб.')
+axes[1, 0].legend()
+axes[1, 0].tick_params(axis='x', rotation=45)
+
+df.boxplot(column='Доход, тыс. руб.', by='Тип окна', ax=axes[1, 1])
+axes[1, 1].set_title('Распределение доходов по типам окон')
+axes[1, 1].set_ylabel('Доход, тыс. руб.')
+
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.bar(monthly_income.index, monthly_income.values, color='lightgreen', edgecolor='darkgreen')
+plt.title('Суммарный месячный доход')
+plt.ylabel('Доход, тыс. руб.')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('месячный_доход.png', dpi=300, bbox_inches='tight')
+print("График сохранён как 'месячный_доход.png'")
