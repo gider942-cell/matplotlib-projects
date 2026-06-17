@@ -1,0 +1,73 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+plt.style.use('dark_background') 
+np.random.seed(42)  
+
+n_models = 20  
+
+data = {
+    'Model': [f'CPU-{i+1}' for i in range(n_models)],
+    'Clock_Speed_GHz': np.random.uniform(2.0, 4.5, n_models),  
+    'Cores': np.random.choice([2, 4, 6, 8, 12, 16], n_models, p=[0.1, 0.2, 0.3, 0.25, 0.1, 0.05]),  
+    'Release_Year': np.random.randint(2015, 2024, n_models) 
+}
+
+df = pd.DataFrame(data)
+
+progress_factor = 1 + (df['Release_Year'] - 2015) * 0.08 
+df['Performance_Score'] = df['Clock_Speed_GHz'] * df['Cores'] * progress_factor
+
+df = df.sort_values('Performance_Score', ascending=False).reset_index(drop=True)
+df['Rank'] = df.index + 1 
+
+print("Сгенерированные данные о процессорах:")
+print(df.head(10))  
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('Анализ производительности вычислительной техники', fontsize=16, fontweight='bold')
+
+axes[0, 0].hist(df['Clock_Speed_GHz'], bins=10, color='skyblue', edgecolor='black', alpha=0.7)
+axes[0, 0].set_title('Распределение тактовых частот')
+axes[0, 0].set_xlabel('Тактовая частота (ГГц)')
+axes[0, 0].set_ylabel('Количество моделей')
+
+cores_counts = df['Cores'].value_counts().sort_index()
+axes[0, 1].bar(cores_counts.index, cores_counts.values, color='lightgreen', edgecolor='black')
+axes[0, 1].set_title('Распределение по количеству ядер')
+axes[0, 1].set_xlabel('Количество ядер')
+axes[0, 1].set_ylabel('Количество моделей')
+
+yearly_perf = df.groupby('Release_Year')['Performance_Score'].mean()
+axes[1, 0].plot(yearly_perf.index, yearly_perf.values, marker='o', linewidth=2, markersize=8, color='orange')
+axes[1, 0].set_title('Средняя производительность по годам')
+axes[1, 0].set_xlabel('Год выпуска')
+axes[1, 0].set_ylabel('Средний балл производительности')
+axes[1, 0].grid(True, alpha=0.3)
+
+top_10 = df.head(10)
+bars = axes[1, 1].barh(top_10['Model'], top_10['Performance_Score'], color='coral', edgecolor='black')
+axes[1, 1].set_title('Топ-10 процессоров по производительности')
+axes[1, 1].set_xlabel('Балл производительности')
+
+for bar in bars:
+    width = bar.get_width()
+    axes[1, 1].annotate(f'{width:.1f}',
+                        xy=(width, bar.get_y() + bar.get_height() / 2),
+                        xytext=(3, 0),  
+                        textcoords='offset points',
+                        ha='left', va='center')
+
+plt.tight_layout()
+plt.show()
+
+print("\n" + "="*50)
+print("СТАТИСТИКА ПО ДАННЫМ:")
+print("="*50)
+print(f"Общее количество моделей: {len(df)}")
+print(f"Средняя тактовая частота: {df['Clock_Speed_GHz'].mean():.2f} ГГц")
+print(f"Среднее количество ядер: {df['Cores'].mean():.1f}")
+print(f"Средний год выпуска: {df['Release_Year'].mean():.1f}")
+print(f"Средняя производительность: {df['Performance_Score'].mean():.2f} баллов")
+print(f"Максимальная производительность: {df['Performance_Score'].max():.2f} баллов (модель {df.loc[df['Performance_Score'].idxmax(), 'Model']})")
