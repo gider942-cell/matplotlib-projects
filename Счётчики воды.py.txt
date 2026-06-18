@@ -1,0 +1,79 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+from datetime import datetime, timedelta 
+
+np.random.seed(42)
+
+start_date = datetime(2024, 6, 1)
+dates = [start_date + timedelta(days=i) for i in range(30)]
+
+cold_water = np.random.normal(5, 0.5, 30).cumsum() + 100
+hot_water = np.random.normal(3, 0.3, 30).cumsum() + 50 
+
+df = pd.DataFrame({
+    'Дата': dates,
+    'Холодная_вода': cold_water,
+    'Горячая_вода': hot_water
+})
+
+df['Расход_холодной'] = df['Холодная_вода'].diff().fillna(0)
+df['Расход_горячей'] = df['Горячая_вода'].diff().fillna(0)
+
+print("Первые 5 строк данных:")
+print(df.head())
+
+# 2. Анализ данных
+total_cold = df['Расход_холодной'].sum()
+total_hot = df['Расход_горячей'].sum()
+avg_daily_cold = df['Расход_холодной'].mean()
+avg_daily_hot = df['Расход_горячей'].mean()
+
+print(f"\nИтого за месяц:")
+print(f"Холодная вода: {total_cold:.2f} м?")
+print(f"Горячая вода: {total_hot:.2f} м?")
+print(f"Средний дневной расход (холодная): {avg_daily_cold:.2f} м?/день")
+print(f"Средний дневной расход (горячая): {avg_daily_hot:.2f} м?/день")
+
+# 3. Визуализация
+fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+fig.suptitle('Анализ показаний счётчиков воды за месяц', fontsize=16)
+
+# График 1: Показания счётчиков
+axes[0, 0].plot(df['Дата'], df['Холодная_вода'], label='Холодная вода', color='blue')
+axes[0, 0].plot(df['Дата'], df['Горячая_вода'], label='Горячая вода', color='red')
+axes[0, 0].set_title('Показания счётчиков')
+axes[0, 0].set_xlabel('Дата')
+axes[0, 0].set_ylabel('Показания, м?')
+axes[0, 0].legend()
+axes[0, 0].grid(True)
+
+# График 2: Суточный расход
+axes[0, 1].bar(df['Дата'], df['Расход_холодной'], alpha=0.7, label='Холодная вода', color='lightblue')
+axes[0, 1].bar(df['Дата'], df['Расход_горячей'], alpha=0.7, label='Горячая вода', color='lightcoral')
+axes[0, 1].set_title('Суточный расход воды')
+axes[0, 1].set_xlabel('Дата')
+axes[0, 1].set_ylabel('Расход, м?/день')
+axes[0, 1].legend()
+axes[0, 1].grid(True, axis='y')
+
+# График 3: Кумулятивный расход
+axes[1, 0].plot(df['Дата'], df['Расход_холодной'].cumsum(), label='Холодная вода', color='blue', linewidth=2)
+axes[1, 0].plot(df['Дата'], df['Расход_горячей'].cumsum(), label='Горячая вода', color='red', linewidth=2)
+axes[1, 0].set_title('Кумулятивный расход')
+axes[1, 0].set_xlabel('Дата')
+axes[1, 0].set_ylabel('Суммарный расход, м?')
+axes[1, 0].legend()
+axes[1, 0].grid(True)
+
+# График 4: Гистограмма распределения расхода
+axes[1, 1].hist(df['Расход_холодной'][1:], bins=10, alpha=0.7, label='Холодная вода', color='lightblue', edgecolor='black')
+axes[1, 1].hist(df['Расход_горячей'][1:], bins=10, alpha=0.7, label='Горячая вода', color='lightcoral', edgecolor='black')
+axes[1, 1].set_title('Распределение суточного расхода')
+axes[1, 1].set_xlabel('Расход, м?/день')
+axes[1, 1].set_ylabel('Количество дней')
+axes[1, 1].legend()
+axes[1, 1].grid(True, axis='y')
+
+plt.tight_layout()
+plt.show()
