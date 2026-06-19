@@ -1,0 +1,103 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+np.random.seed(42)
+
+n_samples = 500
+
+districts = ['Центр', 'Север', 'Юг', 'Восток', 'Запад']
+district = np.random.choice(districts, size=n_samples)
+
+area = np.random.uniform(20, 150, size=n_samples).round(1)
+
+floor = np.random.randint(1, 26, size=n_samples)
+
+year_built = np.random.randint(1970, 2025, size=n_samples)
+
+base_price_per_sqm = {
+    'Центр': 250000,
+    'Север': 180000,
+    'Юг': 160000,
+    'Восток': 170000,
+    'Запад': 190000
+}
+
+price_per_sqm = np.array([base_price_per_sqm[d] for d in district])
+
+age = 2024 - year_built
+price_factor = 1 - 0.003 * age
+price_factor = np.clip(price_factor, 0.7, 1.1)
+
+noise = np.random.normal(0, 0.1, size=n_samples)
+price = area * price_per_sqm * price_factor * (1 + noise)
+price = np.clip(price, 500_000, None)
+
+df = pd.DataFrame({
+    'district': district,
+    'area': area,
+    'floor': floor,
+    'year_built': year_built,
+    'price': price.round(2)
+})
+
+df['price_per_sqm'] = (df['price'] / df['area']).round(2)
+
+print("Первые 5 строк данных:")
+print(df.head())
+print("\nОбщая статистика:")
+print(df.describe())
+
+avg_price_by_district = df.groupby('district')['price'].mean().sort_values(ascending=False)
+print("\nСредняя цена по районам:")
+print(avg_price_by_district)
+
+avg_price_per_sqm_by_district = df.groupby('district')['price_per_sqm'].mean().sort_values(ascending=False)
+print("\nСредняя цена за м? по районам:")
+print(avg_price_per_sqm_by_district)
+
+correlation = df['area'].corr(df['price'])
+print(f"\nКорреляция между площадью и ценой: {correlation:.3f}")
+
+plt.style.use('seaborn-v0_8-whitegrid')
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+axes[0, 0].hist(df['price'], bins=30, color='skyblue', edgecolor='black')
+axes[0, 0].set_title('Распределение цен на недвижимость')
+axes[0, 0].set_xlabel('Цена (руб.)')
+axes[0, 0].set_ylabel('Количество объектов')
+
+axes[0, 1].scatter(df['area'], df['price'], alpha=0.6, color='green')
+axes[0, 1].set_title('Зависимость цены от площади')
+axes[0, 1].set_xlabel('Площадь (м?)')
+axes[0, 1].set_ylabel('Цена (руб.)')
+
+A = np.vstack([df['area'], np.ones(len(df))]).T
+m, c = np.linalg.lstsq(A, df['price'], rcond=None)[0]
+x_line = np.linspace(df['area'].min(), df['area'].max(), 100)
+y_line = m * x_line + c
+axes[0, 1].plot(x_line, y_line, color='red', linewidth=2, label=f'y = {m:.2f}x + {c:.2f}')
+axes[0, 1].legend()
+
+axes[1, 0].bar(avg_price_by_district.index, avg_price_by_district.values, color='coral')
+axes[1, 0].set_title('Средняя цена по районам')
+axes[1, 0].set_xlabel('Район')
+axes[1, 0].set_ylabel('Средняя цена (руб.)')
+plt.setp(axes[1, 0].xaxis.get_majorticklabels(), rotation=45)
+
+axes[1, 1].bar(avg_price_per_sqm_by_district.index, avg_price_per_sqm_by_district.values, color='purple')
+axes[1, 1].set_title('Средняя цена за м? по районам')
+axes[1, 1].set_xlabel('Район')
+axes[1, 1].set_ylabel('Цена за м? (руб.)')
+plt.setp(axes[1, 1].xaxis.get_majorticklabels(), rotation=45)
+
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+df.boxplot(column='price', by='district', grid=False)
+plt.title('Распределение цен по районам (boxplot)')
+plt.xlabel('Район')
+plt.ylabel('Цена (руб.)')
+plt.suptitle('')
+plt.show()
