@@ -1,0 +1,70 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(42) 
+data = {
+    'Имя': ['Анна', 'Борис', 'Виктор', 'Галина', 'Дмитрий', 'Елена', 'Фёдор', 'Галина'],
+    'Возраст': np.random.randint(20, 40, 8),
+    'Зарплата': np.random.randint(30000, 100000, 8),
+    'Оценка': np.random.uniform(3.0, 5.0, 8).round(2)
+}
+
+df = pd.DataFrame(data)
+print("Исходные данные:")
+print(df)
+print("\n" + "="*50 + "\n")
+
+df['Ранг_Зарплата'] = df['Зарплата'].rank(ascending=False, method='min')
+
+df['Ранг_Оценка'] = df['Оценка'].rank(ascending=False, method='min')
+
+df['Ранг_Возраст'] = df['Возраст'].rank(ascending=True, method='min')
+
+print("Данные с рангами:")
+print(df.sort_values('Ранг_Зарплата'))
+print("\n" + "="*50 + "\n")
+
+df['Суммарный_ранг'] = df['Ранг_Зарплата'] * 0.6 + df['Ранг_Оценка'] * 0.4
+df['Финальный_ранг'] = df['Суммарный_ранг'].rank(method='min')
+
+print("Финальное ранжирование (с учётом зарплаты и оценки):")
+print(df[['Имя', 'Зарплата', 'Оценка', 'Суммарный_ранг', 'Финальный_ранг']].sort_values('Финальный_ранг'))
+print("\n" + "="*50 + "\n")
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig.suptitle('Визуализация ранжирования данных', fontsize=16)
+
+axes[0, 0].bar(df['Имя'], df['Зарплата'], color='skyblue')
+axes[0, 0].set_title('Зарплата сотрудников')
+axes[0, 0].set_ylabel('Зарплата, руб.')
+axes[0, 0].tick_params(axis='x', rotation=45)
+
+for i, (name, salary, rank) in enumerate(zip(df['Имя'], df['Зарплата'], df['Ранг_Зарплата'])):
+    axes[0, 0].text(i, salary + 1000, f'#{int(rank)}', ha='center', fontsize=9)
+
+axes[0, 1].bar(df['Имя'], df['Оценка'], color='lightgreen')
+axes[0, 1].set_title('Оценки сотрудников')
+axes[0, 1].set_ylabel('Оценка')
+axes[0, 1].tick_params(axis='x', rotation=45)
+
+for i, (name, grade, rank) in enumerate(zip(df['Имя'], df['Оценка'], df['Ранг_Оценка'])):
+    axes[0, 1].text(i, grade + 0.02, f'#{int(rank)}', ha='center', fontsize=9)
+
+axes[1, 0].bar(df['Имя'], df['Финальный_ранг'], color='coral')
+axes[1, 0].set_title('Финальный ранг (комбинированный)')
+axes[1, 0].set_ylabel('Ранг')
+axes[1, 0].tick_params(axis='x', rotation=45)
+
+scatter = axes[1, 1].scatter(df['Зарплата'], df['Оценка'], c=df['Финальный_ранг'], cmap='viridis', s=100)
+axes[1, 1].set_title('Корреляция: Зарплата vs Оценка')
+axes[1, 1].set_xlabel('Зарплата, руб.')
+axes[1, 1].set_ylabel('Оценка')
+
+for i, name in enumerate(df['Имя']):
+    axes[1, 1].annotate(name, (df['Зарплата'].iloc[i], df['Оценка'].iloc[i]),
+                       xytext=(5, 5), textcoords='offset points', fontsize=8)
+
+plt.colorbar(scatter, ax=axes[1, 1], label='Финальный ранг')
+plt.tight_layout()
+plt.show()
