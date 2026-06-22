@@ -1,0 +1,51 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+np.random.seed(42)
+num_steps = 100 
+initial_position = np.array([0.0, 0.0])
+target_position = np.array([10.0, 10.0])
+speed = 0.5
+noise_strength = 0.2 
+positions = np.zeros((num_steps + 1, 2))
+positions[0] = initial_position
+for i in range(num_steps):
+    direction = target_position - positions[i]
+    distance_to_target = np.linalg.norm(direction)
+    if distance_to_target < 0.1:
+        positions[i+1] = positions[i]
+        continue 
+    normalized_direction = direction / distance_to_target
+    movement = normalized_direction * speed
+    noise = np.random.normal(0, noise_strength, 2)
+    movement += noise 
+    positions[i+1] = positions[i] + movement
+    
+df = pd.DataFrame(positions, columns=['x', 'y'])
+df['step'] = df.index 
+df['distance_to_target'] = np.sqrt((df['x'] - target_position[0])**2 + (df['y'] - target_position[1]**2))
+
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(df['x'], df['y'], 'b-', linewidth=2, label='Траектория робота')
+plt.plot([initial_position[0]], [initial_position[1]], 'go', markersize=10, label='Старт')
+plt.plot([target_position[0]], [target_position[1]], 'ro', markersize=10, label='Цель')
+plt.xlabel('X координата')
+plt.ylabel('Y координата')
+plt.title('Траектория движения робота')
+plt.grid(True)
+plt.legend()
+plt.subplot(1, 2, 2)
+plt.plot(df['step'], df['distance_to_target'], 'r-', linewidth=2)
+plt.xlabel('Шаг симуляции')
+plt.ylabel('Расстояние до цели')
+plt.title('Изменение расстояния до цели')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+print("Статистика движения робота:")
+print(f"Начальная позиция: {initial_position}")
+print(f"Целевая позиция: {target_position}")
+print(f"Финальное расстояние до цели: {df['distance_to_target'].iloc[-1]:.3f}")
+print(f"Количество шагов: {num_steps}")
