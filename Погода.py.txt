@@ -1,0 +1,77 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+cities = [
+    'Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург',
+    'Казань', 'Нижний Новгород', 'Челябинск', 'Самара',
+    'Омск', 'Ростов-на-Дону', 'Уфа', 'Красноярск',
+    'Воронеж', 'Пермь', 'Волгоград'
+]
+
+np.random.seed(42)
+
+data = []
+for city in cities:
+    temp_mean = np.random.uniform(18, 25) 
+    temperatures = np.random.normal(temp_mean, 3, 30) 
+
+    rainfall = np.random.exponential(5, 30)
+
+    humidity = np.random.uniform(40, 80, 30)
+
+    for day, (temp, rain, hum) in enumerate(zip(temperatures, rainfall, humidity), start=1):
+        data.append({
+            'Город': city,
+            'День': day,
+            'Температура': round(temp, 1),
+            'Осадки': round(rain, 1),
+            'Влажность': round(hum, 1)
+        })
+
+df = pd.DataFrame(data)
+
+monthly_stats = df.groupby('Город').agg({
+    'Температура': 'mean',
+    'Осадки': 'sum',  
+    'Влажность': 'mean'
+}).round(2)
+
+monthly_stats_ranked = monthly_stats.sort_values('Температура', ascending=False)
+monthly_stats_ranked['Ранг'] = range(1, len(monthly_stats_ranked) + 1)
+
+print("Ранжирование городов России по средней температуре в июне:")
+print("=" * 60)
+print(monthly_stats_ranked)
+
+fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+fig.suptitle('Анализ погоды в городах России за июнь', fontsize=16, fontweight='bold')
+
+axes[0, 0].barh(monthly_stats_ranked.index, monthly_stats_ranked['Температура'], color='orange')
+axes[0, 0].set_xlabel('Средняя температура (°C)')
+axes[0, 0].set_title('Средняя температура в июне')
+axes[0, 0].grid(axis='x', alpha=0.3)
+
+axes[0, 1].barh(monthly_stats_ranked.index, monthly_stats_ranked['Осадки'], color='blue')
+axes[0, 1].set_xlabel('Сумма осадков за месяц (мм)')
+axes[0, 1].set_title('Осадки в июне')
+axes[0, 1].grid(axis='x', alpha=0.3)
+
+axes[1, 0].barh(monthly_stats_ranked.index, monthly_stats_ranked['Влажность'], color='green')
+axes[1, 0].set_xlabel('Средняя влажность (%)')
+axes[1, 0].set_title('Влажность в июне')
+axes[1, 0].grid(axis='x', alpha=0.3)
+
+top_5 = monthly_stats_ranked.head(5)
+axes[1, 1].pie(top_5['Температура'], labels=top_5.index, autopct='%1.1f%%')
+axes[1, 1].set_title('Топ-5 самых тёплых городов в июне')
+
+plt.tight_layout()
+plt.show()
+
+print("\nДополнительная статистика:")
+print("=" * 30)
+print(f"Самый тёплый город: {monthly_stats_ranked.index[0]} ({monthly_stats_ranked['Температура'].iloc[0]}°C)")
+print(f"Самый холодный город: {monthly_stats_ranked.index[-1]} ({monthly_stats_ranked['Температура'].iloc[-1]}°C)")
+print(f"Средняя температура по всем городам: {monthly_stats['Температура'].mean():.2f}°C")
+print(f"Среднее количество осадков: {monthly_stats['Осадки'].mean():.2f} мм")
