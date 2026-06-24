@@ -1,0 +1,87 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+plt.style.use('seaborn-v0_8-darkgrid')
+plt.rcParams['font.size'] = 12
+
+months = [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+]
+
+base_sales = np.zeros(12)
+base_sales[8:] = [5.0, 7.5, 9.0, 11.0]
+
+np.random.seed(42)
+noise = np.random.normal(loc=0, scale=0.8, size=12)
+sales_millions = np.clip(base_sales + noise, 0, None)
+
+df = pd.DataFrame({
+    'Месяц': months,
+    'Продажи_млн': sales_millions
+})
+
+avg_price_usd = 60.0 
+df['Цена_USD'] = avg_price_usd 
+df['Выручка_млн_USD'] = df['Продажи_млн'] * df['Цена_USD']
+
+df['Месяц_номер'] = np.arange(1, 13)
+
+print("=== Данные о продажах GTA 5 за 2013 год ===")
+print(df[['Месяц', 'Продажи_млн', 'Выручка_млн_USD']])
+
+total_sales = df['Продажи_млн'].sum()
+total_revenue = df['Выручка_млн_USD'].sum()
+avg_monthly_sales = df['Продажи_млн'].mean()
+max_sales_month = df.loc[df['Продажи_млн'].idxmax(), 'Месяц']
+min_sales_month = df.loc[df['Продажи_млн'].idxmin(), 'Месяц']
+
+growth_rate = ((df.loc[11, 'Продажи_млн'] - df.loc[8, 'Продажи_млн']) / 
+               df.loc[8, 'Продажи_млн']) * 100 if df.loc[8, 'Продажи_млн'] > 0 else 0
+               
+print("\n=== Ключевые метрики ===")
+print(f"Общие продажи за год: {total_sales:.2f} млн копий")
+print(f"Общая выручка: ${total_revenue:.2f} млн")
+print(f"Средние продажи в месяц: {avg_monthly_sales:.2f} млн копий")
+print(f"Месяц с максимальными продажами: {max_sales_month}")
+print(f"Месяц с минимальными продажами: {min_sales_month}")
+print(f"Рост продаж с сентября по декабрь: {growth_rate:.1f}%")
+
+fig, ax1 = plt.subplots(figsize=(12, 6))
+
+bars = ax1.bar(df['Месяц'], df['Продажи_млн'], color='#FF5733', alpha=0.7, label='Продажи (млн копий)')
+ax1.set_xlabel('Месяц')
+ax1.set_ylabel('Продажи (млн копий)', color='#FF5733')
+ax1.tick_params(axis='y', labelcolor='#FF5733')
+ax1.set_title('Анализ продаж GTA 5 в 2013 году')
+
+ax2 = ax1.twinx()
+ax2.plot(df['Месяц'], df['Выручка_млн_USD'], color='#33FF57', marker='o', linewidth=2, label='Выручка (млн $)')
+ax2.set_ylabel('Выручка (млн USD)', color='#33FF57')
+ax2.tick_params(axis='y', labelcolor='#33FF57')
+
+for bar in bars:
+    height = bar.get_height()
+    ax1.text(bar.get_x() + bar.get_width()/2., height,
+             f'{height:.1f}',
+             ha='center', va='bottom', fontsize=9)
+             
+lines_1, labels_1 = ax1.get_legend_handles_labels()
+lines_2, labels_2 = ax2.get_legend_handles_labels()
+ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left')
+
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(10, 5))
+cumulative_sales = df['Продажи_млн'].cumsum()
+plt.plot(df['Месяц'], cumulative_sales, marker='s', color='#3357FF', linewidth=2)
+plt.fill_between(df['Месяц'], cumulative_sales, alpha=0.3, color='#3357FF')
+plt.title('Накопленные продажи GTA 5 в 2013 году')
+plt.xlabel('Месяц')
+plt.ylabel('Накопленные продажи (млн копий)')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
