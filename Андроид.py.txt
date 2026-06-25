@@ -1,0 +1,68 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+plt.style.use('seaborn-v0_8-darkgrid')
+
+def simulate_android_sensor_data(num_sensors=10, time_steps=288):
+    data = np.random.normal(loc=50, scale=5, size=(time_steps, num_sensors))
+    anomaly_indices = np.random.choice(time_steps, size=int(time_steps * 0.02), replace=False)
+    sensor_indices = np.random.randint(0, num_sensors, size=len(anomaly_indices))
+    
+    for t, s in zip(anomaly_indices, sensor_indices):
+        data[t, s] += np.random.choice([-1, 1]) * np.random.uniform(20, 40)
+    
+    return data 
+    
+def android_algorithm(data_array):
+    columns = [f"Sensor_{i+1}" for i in range(data_array.shape[1])]
+    df = pd.DataFrame(data_array, columns=columns)
+    start_time = pd.Timestamp('2023-10-01 00:00:00')
+    df['Time'] = pd.date_range(start=start_time, periods=len(df), freq='5T')
+    df.set_index('Time', inplace=True)
+    rolling_mean = df.rolling(window=5).mean()
+    mean_val = df.mean().mean()
+    std_val = df.std().mean()
+    threshold_high = mean_val + 3 * std_val
+    threshold_low = mean_val - 3 * std_val
+    anomalies = df[(df > threshold_high) | (df < threshold_low)]
+    anomaly_count = anomalies.count().sum()
+    print(f"[Андроид] Анализ завершен. Найдено аномалий: {anomaly_count}")
+    if anomaly_count > 0:
+        print("[Андроид] Список критических точек (первые 5):")
+        sample_anomalies = anomalies.stack().dropna().head(5)
+        print(sample_anomalies)
+    
+    return df, rolling_mean, anomaly_count
+    
+def visualize_android_report(original_df, smoothed_df):
+    """
+    Визуализация работы алгоритма андроида.
+    Показывает сырые данные и сглаженную линию тренда.
+    """
+    plt.figure(figsize=(14, 7))
+
+    plt.plot(original_df.index, original_df['Sensor_1'], color='gray', alpha=0.3, label='Сырые данные (Sensor 1)')
+
+    plt.plot(smoothed_df.index, smoothed_df['Sensor_1'], color='blue', linewidth=2, label='Сглаженный тренд (Алгоритм андроида)')
+    
+    plt.title('Отчет андроида: Мониторинг состояния системы (Sensor 1)', fontsize=16)
+    plt.xlabel('Время', fontsize=12)
+    plt.ylabel('Значение показателя', fontsize=12)
+    plt.legend(fontsize=12)
+    plt.grid(True, which='both', linestyle='--', alpha=0.7)
+    
+    plt.gcf().autofmt_xdate()
+    
+    plt.tight_layout()
+    plt.show()
+
+if __name__ == "__main__":
+    print("Запуск симуляции алгоритма работы андроида...")
+
+    raw_data = simulate_android_sensor_data(num_sensors=5, time_steps=144)
+    processed_data, smoothed_data, anomalies_found = android_algorithm(raw_data)
+
+    visualize_android_report(processed_data, smoothed_data)
+    
+    print("\n[Андроид] Отчет сформирован. Ожидание дальнейших инструкций.")
